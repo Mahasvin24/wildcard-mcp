@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wildcard MCP — Demo Walkthrough</title>
+<style>
+  :root {
+    --bg: #f4f4f2;
+    --panel: #ffffff;
+    --ink: #1d1c1a;
+    --muted: #6b6862;
+    --line: #e5e3de;
+    --user-bg: #ece9e3;
+    --accent: #cc6b3f;        /* wildcard-ish warm accent */
+    --tool-bg: #faf9f7;
+    --tool-line: #e0ddd6;
+    --code: #3b3a37;
+    --good: #2e7d55;
+    --warn: #b8642f;
+    --chip: #efece6;
+    --track: #3f77cc;
+    --act: #cc6b3f;
+    --publish: #7a56c2;
+    --measure: #2e7d55;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1917;
+      --panel: #232120;
+      --ink: #ece9e3;
+      --muted: #9c988f;
+      --line: #332f2c;
+      --user-bg: #2c2a27;
+      --accent: #e08a5c;
+      --tool-bg: #1e1c1b;
+      --tool-line: #38342f;
+      --code: #cbc7bf;
+      --good: #6bbd8f;
+      --warn: #e0995c;
+      --chip: #302d29;
+      --track: #6b9be0;
+      --act: #e08a5c;
+      --publish: #a98ee0;
+      --measure: #6bbd8f;
+      --shadow: 0 1px 3px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 28px 18px 80px; }
+
+  /* header */
+  .doc-head { margin-bottom: 22px; }
+  .doc-head h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -.01em; }
+  .doc-head p { margin: 0; color: var(--muted); font-size: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .badge {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; padding: 3px 9px; border-radius: 999px;
+    color: #fff;
+  }
+  .b-track { background: var(--track); }
+  .b-act { background: var(--act); }
+  .b-publish { background: var(--publish); }
+  .b-measure { background: var(--measure); }
+
+  /* app window */
+  .app {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(var(--panel), var(--panel));
+  }
+  .dots { display: flex; gap: 7px; }
+  .dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .dots i:nth-child(1){ background:#e2604f;} .dots i:nth-child(2){ background:#e6b04a;} .dots i:nth-child(3){ background:#5cb85c;}
+  .titlebar .name { font-weight: 600; font-size: 13px; }
+  .connector {
+    margin-left: auto; font-size: 12px; color: var(--muted);
+    background: var(--chip); border: 1px solid var(--line);
+    padding: 3px 10px; border-radius: 999px; font-weight: 600;
+  }
+  .connector b { color: var(--good); }
+
+  .thread { padding: 20px 20px 26px; }
+
+  /* messages */
+  .msg { margin: 0 0 18px; }
+  .row-user { display: flex; justify-content: flex-end; }
+  .bubble-user {
+    background: var(--user-bg); border: 1px solid var(--line);
+    border-radius: 14px 14px 4px 14px; padding: 12px 14px; max-width: 82%;
+    font-size: 14.5px;
+  }
+  .assistant { display: flex; gap: 12px; }
+  .avatar {
+    flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px;
+    background: var(--accent); color: #fff; font-weight: 800;
+    display: grid; place-items: center; font-size: 13px; margin-top: 2px;
+  }
+  .assistant .body { flex: 1 1 auto; min-width: 0; }
+  .assistant p { margin: 0 0 10px; }
+  .phase-label {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); margin: 6px 0 10px;
+  }
+  .phase-label::before { content:""; width: 22px; height: 2px; background: var(--line); }
+
+  /* tool call card */
+  .tool {
+    border: 1px solid var(--tool-line); background: var(--tool-bg);
+    border-radius: 10px; margin: 8px 0 12px; overflow: hidden;
+  }
+  .tool > .head {
+    display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; border-bottom: 1px solid var(--tool-line);
+  }
+  .tool > .head .tri { color: var(--accent); }
+  .tool > .head .tname { color: var(--code); font-weight: 600; }
+  .tool > .head .targs { color: var(--muted); }
+  .tool > .head .tag {
+    margin-left: auto; font-size: 10px; font-weight: 800; letter-spacing:.05em;
+    text-transform: uppercase; color: var(--muted);
+    border: 1px solid var(--tool-line); border-radius: 5px; padding: 1px 6px;
+  }
+  .tool .out { padding: 11px 13px; font-size: 13px; }
+  .tool .out.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--code); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--tool-line); }
+  th { color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing:.04em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .me { color: var(--accent); font-weight: 700; }
+
+  .opp { padding: 9px 0; border-bottom: 1px dashed var(--tool-line); }
+  .opp:last-child { border-bottom: 0; }
+  .opp .t { font-weight: 600; }
+  .opp .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .pri { display:inline-block; font-weight:800; color: var(--act); }
+
+  .callout {
+    border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent);
+    padding: 8px 12px; border-radius: 0 8px 8px 0; font-size: 13px; margin: 4px 0 2px;
+  }
+  .good { color: var(--good); font-weight: 700; }
+  .warn { color: var(--warn); font-weight: 700; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .88em;
+    background: var(--chip); padding: 1px 5px; border-radius: 4px; }
+
+  .written {
+    border: 1px dashed var(--tool-line); border-radius: 10px; padding: 12px 14px;
+    background: color-mix(in srgb, var(--publish) 6%, transparent);
+  }
+  .written h4 { margin: 0 0 6px; font-size: 15px; }
+  .written p { font-size: 13px; color: var(--ink); }
+  .written .src { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  .final { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 12px; }
+
+  .foot {
+    margin-top: 18px; font-size: 12px; color: var(--muted); text-align: center;
+    line-height: 1.6;
+  }
+  .strike { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="doc-head">
+    <h1>Wildcard MCP — a possible demo run</h1>
+    <p>Storyboard of the <code>full_audit</code> one-click prompt in Claude Desktop. Numbers match the seeded data; wording is illustrative — Claude decides which tools to call.</p>
+    <div class="legend">
+      <span class="badge b-track">Track</span>
+      <span class="badge b-act">Act</span>
+      <span class="badge b-publish">Publish</span>
+      <span class="badge b-measure">Measure</span>
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="titlebar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="name">Claude</span>
+      <span class="connector">🔌 wildcard · <b>11 tools</b></span>
+    </div>
+
+    <div class="thread">
+
+      <!-- user -->
+      <div class="msg row-user">
+        <div class="bubble-user">
+          Our brand is <b>Dosaze</b>. Audit how we show up in AI shopping, find the single highest-impact fix, make the fix, draft the content to close it, then show me what that visibility is worth.
+        </div>
+      </div>
+
+      <!-- assistant: TRACK -->
+      <div class="msg assistant">
+        <div class="avatar">C</div>
+        <div class="body">
+          <div class="phase-label">Track · where do we show up?</div>
+          <p>Let me pull Dosaze's current standing across the AI shopping surfaces.</p>
+
+          <div class="tool">
+            <div class="head"><span class="tri">▸</span><span class="tname">compare_competitors</span><span class="targs">()</span><span class="tag">Track</span></div>
+            <div class="out">
+              <table>
+                <thead><tr><th class="num">Rank</th><th>Brand</th><th class="num">Share of Voice</th></tr></thead>
+                <tbody>
+                  <tr><td class="num">1</td><td>OLLY Sleep</td><td class="num">31%</td></tr>
+                  <tr><td class="num">2</td><td>Natural Vitality Calm</td><td class="num">22%</td></tr>
+                  <tr><td class="num">3</td><td>Natrol Melatonin</td><td class="num">18%</td></tr>
+                  <tr><td class="num">4</td><td>Nested Naturals Luna</td><td class="num">14%</td></tr>
+                  <tr><td class="num me">6</td><td class="me">Dosaze ⬅</td><td class="num me">11%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="tool">
+            <div class="head"><span class="tri">▸</span><span class="tname">track_visibility</span><span class="targs">("natural sleep aid without melatonin")</span><span class="tag">Track</span></div>
+            <div class="out">
+              <div style="margin-bottom:6px;"><b>“natural sleep aid without melatonin”</b> · 22,000/mo · Dosaze: <span class="warn">not mentioned</span></div>
+              <table>
+                <tbody>
+                  <tr><td>ChatGPT</td><td>#1 Nested Naturals · #2 Calm · <span class="warn">Dosaze not mentioned</span></td></tr>
+                  <tr><td>Gemini</td><td>#1 Nested Naturals · <span class="warn">Dosaze not mentioned</span></td></tr>
+                  <tr><td>Perplexity</td><td>#1 Calm · <span class="warn">Dosaze not mentioned</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <p>Dosaze sits at <b>#6</b> overall with strong sentiment, but it's <b>completely invisible</b> for “natural sleep aid without melatonin” — a 22k/month query. That's the biggest bleed. Let me find the root cause.</p>
+        </div>
+      </div>
+
+      <!-- assistant: ACT -->
+      <div class="msg assistant">
+        <div class="avatar">C</div>
+        <div class="body">
+          <div class="phase-label">Act · what's the fix — and make it</div>
+
+          <div class="tool">
+            <div class="head"><span class="tri">▸</span><span class="tname">list_opportunities</span><span class="targs">()</span><span class="tag">Act</span></div>
+            <div class="out">
+              <div style="color:var(--muted);font-size:12px;margin-bottom:6px;">5 prioritized opportunities</div>
+              <div class="opp">
+                <div class="t"><span class="pri">79/100</span> · Tag DZ-SLEEP-01 as melatonin-free to win melatonin-free searches</div>
+                <div class="meta">Est. <b>$8,184/mo</b> · prompt “natural sleep aid without melatonin” (not mentioned) · <code>catalog_gap</code> · missing <code>melatonin_free</code></div>
+              </div>
+              <div class="opp">
+                <div class="t"><span class="pri">60/100</span> · Climb the magnesium-for-sleep query with a comparison guide</div>
+                <div class="meta">Est. $7,533/mo · “best magnesium supplement for sleep” (#6) · <code>content_gap</code></div>
+              </div>
+              <div class="opp">
+                <div class="t"><span class="pri" style="color:var(--muted)">44 / 43</span> · Add third-party testing + expose L-Theanine on DZ-SLEEP-01</div>
+                <div class="meta">Two more <code>catalog_gap</code>s, same product</div>
+              </div>
+              <div class="callout">💡 <b>Leverage point:</b> 3 of these gaps share one root cause — <code>DZ-SLEEP-01</code> is missing attributes. Enriching that single product closes them all.</div>
+            </div>
+          </div>
+
+          <p>The highest-impact fix is one product. <code>DZ-SLEEP-01</code> genuinely is melatonin-free and contains L-Theanine — the engines just can't confirm it because those attributes aren't published. Fixing this one SKU unlocks <b>three</b> lost queries. Making the fix now:</p>
+
+          <div class="tool">
+            <div class="head"><span class="tri">▸</span><span class="tname">enrich_product</span><span class="targs">("DZ-SLEEP-01")</span><span class="tag">Act · write</span></div>
+            <div class="out">
+              <div class="mono" style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--code);margin-bottom:8px;">
+                + melatonin_free: true<br>
+                + third_party_tested: true<br>
+                + active_ingredients: [Magnesium Glycinate, L-Theanine, Glycine, Apigenin]<br>
+                + certifications: [NSF Certified for Sport, cGMP]
+              </div>
+              <div>Missing attributes: 4 → <span class="good">0 ✅ complete</span></div>
+              <div class="callout" style="margin-top:8px;">🔓 Now eligible for: “natural sleep aid without melatonin”, “third party tested sleep supplements”, “sleep supplement with l-theanine”.</div>
+            </div>
+          </div>
+
+          <div class="tool">
+            <div class="head"><span class="tri">▸</span><span class="tname">list_opportunities</span><span class="targs">()  — re-check</span><span class="tag">Act</span></div>
+            <div class="out">
+              <div>Open opportunities: <b class="strike">5</b> → <b class="good">2</b>. The three catalog gaps for DZ-SLEEP-01 are gone.</div>
+            </div>
+          </div>
+
+          <p>That wasn't a read — the agent <b>changed the catalog through the server</b>, and the to-do list shrank from 5 to 2 to prove it. (In production this write syncs back to Shopify.)</p>
+        </div>
+      </div>
+
+      <!-- assistant: PUBLISH -->
+      <div class="msg assistant">
+        <div class="avatar">C</div>
+        <div class="body">
+          <div class="phase-label">Publish · make the content that gets us recommended</div>
+
+          <div class="tool">
+            <div class="head"><span class="tri">▸</span><span class="tname">draft_content</span><span class="targs">("opp-p1", format: blog_post)</span><span class="tag">Publish</span></div>
+            <div class="out">
+              <div style="font-size:12.5px;">
+                <b>Content brief returned:</b> target “best magnesium supplement for sleep” · feature <code>DZ-MAG-02</code> (Magnesium Glycinate, 350mg, vegan) · differentiate vs Calm, Nested, Natrol · 800–1,200 words, answer the question in paragraph one.
+                <div style="color:var(--muted);margin-top:6px;">↳ The server returns the grounded brief. I write the copy.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="written">
+            <h4>Magnesium Glycinate for Sleep: Why the Form Matters More Than the Dose</h4>
+            <p>If you're comparing magnesium supplements for sleep, the short answer is: look for <b>magnesium glycinate</b>, which is far gentler on digestion than the oxide form found in most cheap options. Dosaze Magnesium Glycinate delivers 350&nbsp;mg per vegan capsule…</p>
+            <div class="src">Written by Claude from the server's brief. Server = grounded data; agent = the writing.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- assistant: MEASURE -->
+      <div class="msg assistant">
+        <div class="avatar">C</div>
+        <div class="body">
+          <div class="phase-label">Measure · what was it worth?</div>
+
+          <div class="tool">
+            <div class="head"><span class="tri">▸</span><span class="tname">get_revenue_attribution</span><span class="targs">(model: first_click)</span><span class="tag">Measure</span></div>
+            <div class="out">
+              <table>
+                <thead><tr><th>Surface</th><th class="num">Orders</th><th class="num">Revenue</th><th class="num">vs prior 30d</th></tr></thead>
+                <tbody>
+                  <tr><td>ChatGPT</td><td class="num">412</td><td class="num">$19,175</td><td class="num good">5.1×</td></tr>
+                  <tr><td>Gemini</td><td class="num">168</td><td class="num">$7,140</td><td class="num">4.2×</td></tr>
+                  <tr><td>Google AI Overviews</td><td class="num">130</td><td class="num">$5,304</td><td class="num">3.8×</td></tr>
+                  <tr><td>Perplexity</td><td class="num">96</td><td class="num">$4,570</td><td class="num">4.4×</td></tr>
+                  <tr><td>Claude</td><td class="num">74</td><td class="num">$3,271</td><td class="num">4.6×</td></tr>
+                  <tr><td colspan="4" style="color:var(--muted);font-size:11px;">+ Amazon Rufus, Walmart Sparky, Alexa…</td></tr>
+                </tbody>
+              </table>
+              <div class="callout" style="margin-top:8px;"><b>Total AI-attributed revenue: $40,956</b> (prior 30d: $8,992 → <span class="good">4.6×</span>). ChatGPT leads.</div>
+            </div>
+          </div>
+
+          <div class="final">
+            <p><b>Recommendation.</b> The DZ-SLEEP-01 enrichment is a same-day win that unlocks three melatonin-free / testing / ingredient queries worth ~$8k+/mo. Next, ship the magnesium comparison guide to climb from #6, and re-audit in a week — <code>get_visibility_trend</code> is already showing upward movement on 5 of 8 prompts.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /thread -->
+  </div><!-- /app -->
+
+  <div class="foot">
+    Storyboard of a possible run — actual tool order and wording vary, since Claude decides each call.<br>
+    All figures come from the seeded mock dataset in <code>src/data/</code>. The server performs no LLM calls; the client model does all reasoning and writing.
+  </div>
+
+</div>
+</body>
+</html>
