@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    // We emit modern ESM. "nodenext" makes Node resolve our relative imports,
+    // which is why every local import below is written with a ".js" extension
+    // (that is the compiled path Node loads at runtime, even though the source is .ts).
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": false,
+    "sourceMap": false,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

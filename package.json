@@ -1,0 +1,39 @@
+{
+  "name": "wildcard-mcp",
+  "version": "0.1.0",
+  "description": "An MCP server prototype that exposes Wildcard's AI-shopping-visibility loop (Track -> Act -> Publish -> Measure) as tools any AI agent can call.",
+  "type": "module",
+  "bin": {
+    "wildcard-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",
+    "smoke": "npm run build && node scripts/smoke.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "agentic-commerce",
+    "aeo",
+    "ecommerce"
+  ],
+  "author": "Mahasvin",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mahasvin24/wildcard-mcp.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2"
+  }
+}
