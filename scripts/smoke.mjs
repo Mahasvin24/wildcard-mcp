@@ -82,15 +82,38 @@ console.log(
   ),
 );
 
-// Basic assertion so `npm run smoke` fails loudly if the mutation didn't take.
+// Assertions so `npm run smoke` fails loudly if the demo narrative breaks.
+section("RESULT");
+const checks = [];
+
+// 1. The catalog fix must close opportunities.
 const beforeCount = (before.match(/^### /gm) || []).length;
 const afterCount = (after.match(/^### /gm) || []).length;
-section("RESULT");
-if (afterCount < beforeCount) {
-  console.log(`✅ PASS — opportunities dropped ${beforeCount} -> ${afterCount} after enrich_product.`);
-} else {
-  console.error(`❌ FAIL — expected fewer opportunities after enrich (${beforeCount} -> ${afterCount}).`);
-  process.exitCode = 1;
+checks.push([
+  afterCount < beforeCount,
+  `opportunities dropped ${beforeCount} -> ${afterCount} after enrich_product`,
+]);
+
+// 2. ...and it must ALSO propagate into the Track-phase rankings. These are
+// separate data structures; keeping them in sync is the whole point of
+// applyCatalogUnlocks(). Without this check they can silently disagree.
+const visibility = textOf(
+  await client.callTool({
+    name: "track_visibility",
+    arguments: { prompt: "natural sleep aid without melatonin" },
+  }),
+);
+checks.push([
+  !visibility.includes("Dosaze position: **not mentioned**"),
+  "track_visibility reports Dosaze ranking (not 'not mentioned') after the fix",
+]);
+
+const tracked = textOf(await client.callTool({ name: "list_tracked_prompts", arguments: {} }));
+checks.push([tracked.includes("No total gaps"), "list_tracked_prompts reports zero total gaps"]);
+
+for (const [ok, label] of checks) {
+  console.log(`${ok ? "✅ PASS" : "❌ FAIL"} — ${label}`);
+  if (!ok) process.exitCode = 1;
 }
 
 await client.close();

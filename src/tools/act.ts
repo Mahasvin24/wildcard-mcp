@@ -10,8 +10,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AttributeValue } from "../types.js";
 import { catalog, getProduct, getMissingAttributes } from "../data/catalog.js";
-import { trackedPrompts } from "../data/prompts-data.js";
-import { computeOpportunities } from "../opportunities.js";
+import { computeOpportunities, applyCatalogUnlocks } from "../opportunities.js";
 import { textResult, money, attrValue, positionLabel } from "./helpers.js";
 
 /**
@@ -181,23 +180,26 @@ export function registerActTools(server: McpServer): void {
       for (const [k, v] of Object.entries(toApply)) p.attributes[k] = v;
       const after = getMissingAttributes(p);
 
-      // Which previously-invisible prompts does this unlock?
-      const unlocked = trackedPrompts.filter((pr) => {
-        if (pr.clientPosition !== null) return false;
-        return Object.keys(toApply).some((attr) =>
-          before.includes(attr) && !after.includes(attr),
-        );
-      });
+      // Propagate the fix into the tracked-prompt rankings, so the Track-phase
+      // tools stop reporting these prompts as gaps. Without this, the catalog
+      // and the rankings would disagree.
+      const unlocked = applyCatalogUnlocks(sku);
 
       let md = `## Enriched ${p.title} (\`${sku}\`)\n\nApplied:\n`;
       for (const [k, v] of Object.entries(toApply)) md += `- \`${k}\`: ${attrValue(v)}\n`;
       md += `\nMissing attributes: ${before.length} → **${after.length}**${
         after.length === 0 ? " ✅ complete" : ` (\`${after.join("`, `")}\`)`
       }\n`;
-      if (unlocked.length)
-        md += `\n🔓 This can now make Dosaze eligible for: ${unlocked
-          .map((u) => `"${u.text}"`)
-          .join(", ")}. Re-run \`list_opportunities\` to confirm the gaps closed, then \`draft_content\` to publish supporting content.\n`;
+
+      if (unlocked.length) {
+        const volume = unlocked.reduce((sum, u) => sum + u.searchVolumeMonthly, 0);
+        md += `\n🔓 **Dosaze now ranks for ${unlocked.length} previously-invisible ${
+          unlocked.length === 1 ? "prompt" : "prompts"
+        }** (${volume.toLocaleString()} searches/mo unlocked):\n`;
+        for (const u of unlocked)
+          md += `- "${u.promptText}" — not mentioned → **#${u.newPosition}**\n`;
+        md += `\nVerify with \`track_visibility\` or \`list_tracked_prompts\`, then \`draft_content\` to publish supporting content and climb further.\n`;
+      }
       return textResult(md);
     },
   );

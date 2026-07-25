@@ -123,9 +123,11 @@ export function registerTrackTools(server: McpServer): void {
         )} | ${movement(p.clientPosition, p.clientPositionPrevWeek)} |\n`;
       }
       const invisible = trackedPrompts.filter((p) => p.clientPosition === null);
-      md += `\n**${invisible.length} prompts are total gaps** (Dosaze not mentioned): ${invisible
-        .map((p) => `"${p.text}"`)
-        .join(", ")}.\n`;
+      md += invisible.length
+        ? `\n**${invisible.length} ${
+            invisible.length === 1 ? "prompt is a total gap" : "prompts are total gaps"
+          }** (Dosaze not mentioned): ${invisible.map((p) => `"${p.text}"`).join(", ")}.\n`
+        : `\n✅ **No total gaps** — Dosaze now appears for every tracked prompt.\n`;
       return textResult(md);
     },
   );

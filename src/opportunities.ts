@@ -24,6 +24,13 @@ interface RootCause {
   targetSku?: string;
   /** Attribute that must be present to close a catalog gap. */
   blockingAttribute?: string;
+  /**
+   * Where the brand lands once the blocking attribute is supplied. Filling the
+   * attribute makes the product *eligible*, so it enters the ranking here.
+   * Without this, fixing the catalog would close the opportunity but leave the
+   * Track-phase tools still reporting "not mentioned" — see applyCatalogUnlocks.
+   */
+  unlockPosition?: number;
   recommendedFormat: ContentFormat;
   titleFor: (promptText: string) => string;
   reasonFor: (promptText: string) => string;
@@ -34,6 +41,7 @@ const ROOT_CAUSES: Record<string, RootCause> = {
     type: "catalog_gap",
     targetSku: "DZ-SLEEP-01",
     blockingAttribute: "melatonin_free",
+    unlockPosition: 3,
     recommendedFormat: "collection_page",
     titleFor: () => "Tag DZ-SLEEP-01 as melatonin-free to win melatonin-free searches",
     reasonFor: (p) =>
@@ -43,6 +51,7 @@ const ROOT_CAUSES: Record<string, RootCause> = {
     type: "catalog_gap",
     targetSku: "DZ-SLEEP-01",
     blockingAttribute: "third_party_tested",
+    unlockPosition: 2,
     recommendedFormat: "blog_post",
     titleFor: () => "Add third-party testing data to DZ-SLEEP-01",
     reasonFor: (p) =>
@@ -52,6 +61,7 @@ const ROOT_CAUSES: Record<string, RootCause> = {
     type: "catalog_gap",
     targetSku: "DZ-SLEEP-01",
     blockingAttribute: "active_ingredients",
+    unlockPosition: 4,
     recommendedFormat: "product_description",
     titleFor: () => "Expose DZ-SLEEP-01's active ingredients (incl. L-Theanine)",
     reasonFor: (p) =>
@@ -133,4 +143,61 @@ export function computeOpportunities(): Opportunity[] {
 
 export function getOpportunity(id: string): Opportunity | undefined {
   return computeOpportunities().find((o) => o.id === id);
+}
+
+/** A prompt the brand newly ranks for after a catalog fix. */
+export interface Unlock {
+  promptId: string;
+  promptText: string;
+  newPosition: number;
+  searchVolumeMonthly: number;
+}
+
+/**
+ * Propagate a catalog fix into the tracked-prompt rankings.
+ *
+ * Filling a blocking attribute doesn't just close an opportunity — it makes the
+ * product *eligible* for the buyer question it was invisible for, so the brand
+ * should now appear in the rankings too. This keeps the Track phase consistent
+ * with the Act phase; without it, `list_opportunities` would report the gap
+ * closed while `track_visibility` still said "not mentioned".
+ *
+ * Called by `enrich_product` after it writes attributes. Only promotes prompts
+ * that are (a) blocked by this SKU, (b) no longer missing the attribute, and
+ * (c) currently invisible — so it's safe to call repeatedly.
+ */
+export function applyCatalogUnlocks(sku: string): Unlock[] {
+  const unlocked: Unlock[] = [];
+  const product = getProduct(sku);
+  if (!product) return unlocked;
+  const stillMissing = getMissingAttributes(product);
+
+  for (const [promptId, cause] of Object.entries(ROOT_CAUSES)) {
+    if (cause.type !== "catalog_gap") continue;
+    if (cause.targetSku !== sku) continue;
+    if (!cause.blockingAttribute || cause.unlockPosition === undefined) continue;
+    if (stillMissing.includes(cause.blockingAttribute)) continue; // not fixed yet
+
+    const prompt = getPrompt(promptId);
+    if (!prompt || prompt.clientPosition !== null) continue; // already visible
+
+    // Promote: the brand enters the ranking at its unlock position.
+    prompt.clientPositionPrevWeek = prompt.clientPosition; // null -> "newly ranking"
+    prompt.clientPosition = cause.unlockPosition;
+    for (const ranking of prompt.rankings) {
+      if (ranking.brandId === "dosaze" && ranking.position === null) {
+        ranking.position = cause.unlockPosition;
+        ranking.sku = sku;
+      }
+    }
+
+    unlocked.push({
+      promptId,
+      promptText: prompt.text,
+      newPosition: cause.unlockPosition,
+      searchVolumeMonthly: prompt.searchVolumeMonthly,
+    });
+  }
+
+  return unlocked;
 }
