@@ -94,13 +94,25 @@ Plus resources (`wildcard://brand/dosaze/catalog`, `.../prompts`) and the
 
 ---
 
-## The demo in one line
+## The demo — two beats
 
-In Claude Desktop, trigger `full_audit`. Claude autonomously calls
-`compare_competitors` → `list_opportunities` → `enrich_product` →
-`list_opportunities` (gaps gone) → `draft_content` (and writes the post) →
-`get_revenue_attribution`. Full script + what to say:
-**[docs/DEMO-SCRIPT.md](docs/DEMO-SCRIPT.md)**.
+In Claude Desktop, trigger the **`full_audit`** prompt. It runs in two beats:
+
+**Beat 1 — one click, the whole audit, read-only.** Claude works through four
+labelled sections on its own: where the brand stands → prompt-by-prompt
+visibility → root cause → what AI visibility is worth. It changes nothing, then
+stops at a **Proposed Action** block (Problem · Solution · Changes I want to
+make · Expected impact) and asks *"Want me to go ahead and make these changes?"*
+
+**Beat 2 — you approve, it executes.** `enrich_product` fixes the catalog,
+`list_opportunities` re-runs to prove the gaps closed (**5 → 2**),
+`draft_content` returns a brief and Claude writes the content, then it recaps.
+
+That approval gate mirrors Wildcard's real operator-review model, and it's
+enforced at the protocol level: `enrich_product` is annotated
+`readOnlyHint: false` so clients can gate it. Full script + what to say:
+**[docs/DEMO-SCRIPT.md](docs/DEMO-SCRIPT.md)** · visual storyboard:
+**[docs/demo-walkthrough.html](docs/demo-walkthrough.html)**.
 
 ---
 

@@ -146,6 +146,34 @@ just a read-only API. Agents can *change* things through it.
 
 ---
 
+## 6b. Annotations — telling the client which tools are safe
+
+Every tool can carry **annotations**: hints about its behaviour that a client can
+act on. Ours use two:
+
+```ts
+// a read tool
+annotations: { readOnlyHint: true }
+
+// the write tool (src/tools/act.ts)
+annotations: {
+  readOnlyHint: false,
+  destructiveHint: false,  // additive — fills blanks, deletes nothing
+  idempotentHint: true,    // applying the same attributes twice is a no-op
+}
+```
+
+`enrich_product` is the **only** tool in this server marked as a write. That
+matters for the demo: a client can require confirmation before any non-read-only
+call, so the "ask before you change the catalog" behaviour isn't just a polite
+instruction in the prompt — it's declared in the protocol.
+
+Annotations are *hints*, not enforcement. A server must still validate and
+authorize for real; in production that's where scoped API keys and an audit log
+would go.
+
+---
+
 ## 7. Resources vs tools (`src/resources.ts`)
 
 A **resource** is read-only data addressed by a URI, like a file. We expose:
@@ -162,9 +190,24 @@ resource to the conversation without the model "spending" a tool call on it.
 ## 8. Prompts (`src/prompts.ts`)
 
 An MCP **prompt** is a reusable, parameterized message the *user* triggers from
-the client UI (in Claude Desktop, the "+" menu). Our `full_audit` prompt injects
-one message that tells the model to run the entire loop with our tools. It's the
-demo's one-click on-ramp so you don't type a paragraph in front of the founder.
+the client UI (in Claude Desktop, the "+" menu). It's the demo's one-click
+on-ramp, so you don't type a paragraph in front of the founder.
+
+Our `full_audit` prompt injects one carefully structured message that drives a
+**two-beat flow**:
+
+- **Beat 1 (automatic, read-only):** run all four diagnostic steps in a single
+  pass under fixed section headers, touch nothing, then stop at a **Proposed
+  Action** block (Problem · Solution · Changes I want to make · Expected impact)
+  and ask permission.
+- **Beat 2 (only after the user confirms):** perform the write, prove the gaps
+  closed, draft the content, and recap.
+
+Two things worth noticing about how that's achieved. First, the prompt fixes the
+*headers* and forbids the write tools by name in beat 1 — being explicit about
+what **not** to call is as important as saying what to call. Second, the gate is
+backed by the tool annotations above, so it's structural rather than just
+wishful phrasing.
 
 ---
 

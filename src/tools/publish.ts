@@ -36,7 +36,10 @@ export function registerPublishTools(server: McpServer): void {
     {
       title: "Draft a content brief to close an opportunity",
       description:
-        "Given an opportunity id, return a structured content brief (target keywords, attributes to feature, competitor angle, outline, format guidance). The calling model then writes the actual copy from this brief. Use `list_opportunities` first to get an id.",
+        "Given an opportunity id, return a structured content brief (target keywords, attributes to feature, competitor angle, outline, format guidance). The calling model then writes the actual copy from this brief. Use `list_opportunities` first to get an id. Produces work product — call it only after the operator has approved the plan.",
+      // Read-only in the technical sense (it mutates nothing), but it generates
+      // work product, so the audit prompt gates it behind operator approval.
+      annotations: { readOnlyHint: true },
       inputSchema: {
         opportunity_id: z
           .string()

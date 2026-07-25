@@ -1,8 +1,19 @@
 # Demo script — pitching the Wildcard MCP server
 
 A tight, ~4-minute live demo in Claude Desktop, plus what to say and how to
-handle questions. Practice it once with `npm run smoke` open in a terminal as
-your fallback.
+handle questions.
+
+The demo runs in **two beats**, which is the whole shape of it:
+
+1. **One click → the full audit runs automatically**, start to finish, with clear
+   section headers. It changes nothing. It ends with a **Proposed Action** block
+   and asks permission.
+2. **You say "yes" → it executes**, proves the gaps closed, writes the content,
+   and recaps.
+
+That gate is deliberate: it mirrors how Wildcard's real product works — operators
+review and approve work before it ships — and it makes the demo safe to run live,
+because nothing mutates until the founder says go.
 
 ---
 
@@ -10,10 +21,9 @@ your fallback.
 
 - `npm run build` succeeds; `dist/index.js` exists.
 - Claude Desktop shows **wildcard** connected (see CLAUDE-DESKTOP-SETUP.md).
-- Start a **fresh chat** (so the catalog mutation state is clean — the
-  `enrich_product` fix persists only within a running server session, and a
-  fresh conversation makes the "before → after" land cleanly).
-- Have the terminal ready with `npm run smoke` as a backup if the UI hiccups.
+- **Fully quit and reopen Claude Desktop (⌘Q).** This resets the catalog to its
+  un-enriched state so the "5 → 2" moment lands. Then start a **fresh chat**.
+- Have a terminal ready with `npm run smoke` as a backup.
 
 ---
 
@@ -27,40 +37,45 @@ your fallback.
 
 ---
 
-## The demo (one click)
+## Beat 1 — one click, the whole audit
 
-Open the **"+"** menu → run the **"Run a full AI-shopping audit"** prompt
-(that's the `full_audit` MCP prompt). Or just type:
+Open the **"+"** menu → run **"Run a full AI-shopping audit"** (the `full_audit`
+prompt). It goes end-to-end on its own. **Let it run — don't narrate over it.**
+When it lands, walk the founder through the four headers it produced:
 
-> *"Our brand is Dosaze. Audit how we show up in AI shopping, find the single
-> highest-impact fix, make the fix, draft the content to close it, then show me
-> what that visibility is worth."*
+| Section | What it shows | Your line |
+|---|---|---|
+| **1 — Where Dosaze stands** | #6 rank, 11% Share of Voice, strong sentiment | *"Liked once found, but under-surfaced."* |
+| **2 — Prompt-by-prompt** | Invisible for "natural sleep aid without melatonin," 22k/mo | *"That's the bleed — a total gap on a high-volume query."* |
+| **3 — Root cause** | `DZ-SLEEP-01` missing `melatonin_free` + 2 more | *"Same product causes three lost queries. One fix, three unlocks."* |
+| **4 — What it's worth** | ~$41k AI-attributed, 4.6× vs prior 30d | *"And it ties all of this back to dollars."* |
 
-Then **narrate what Claude does** as the tool calls stream in:
+Then it stops at **Proposed Action** — Problem, Solution, Changes I want to make,
+Expected impact — and asks *"Want me to go ahead and make these changes?"*
 
-1. **TRACK** — Claude calls `compare_competitors` / `list_tracked_prompts`.
-   → *"It's pulling where Dosaze stands — #6 overall, and totally invisible for
-   'natural sleep aid without melatonin,' a 22k-a-month query."*
+**This is your best moment. Pause here and say:**
 
-2. **ACT** — Claude calls `list_opportunities`, sees the top gap, explains the
-   root cause, then calls `enrich_product` on `DZ-SLEEP-01`.
-   → *"It found the root cause — the product isn't tagged melatonin-free, so the
-   engines can't confirm it qualifies — and it just fixed the catalog. That one
-   product was also the reason for two other lost queries."*
+> "Notice it stopped. Everything so far was read-only — it diagnosed, it didn't
+> touch anything. It's telling me exactly what it wants to change and asking
+> permission. That's your operator-approval model, but driven by an agent. And
+> it's enforced at the protocol level — the write tool is annotated as a write,
+> so a client can gate it."
 
-3. **Confirm** — Claude re-runs `list_opportunities`; the catalog gaps are gone.
-   → *"The to-do list just shrank from 5 to 2 — those weren't reads, the agent
-   changed the catalog through the server."*
+---
 
-4. **PUBLISH** — Claude calls `draft_content`, gets a brief, and **writes** the
-   blog post / collection page.
-   → *"The server handed it a grounded brief; Claude wrote the actual copy. The
-   server serves your data; the agent brings the intelligence — that's why it
-   needs no model of its own."*
+## Beat 2 — approve, and it executes
 
-5. **MEASURE** — Claude calls `get_revenue_attribution`.
-   → *"And it ties visibility back to dollars — ~4.6x AI-attributed revenue vs
-   the prior month, ChatGPT leading."*
+Type **"yes"** (or "go ahead"). Then narrate:
+
+1. **`enrich_product`** — fills the 4 missing attributes on `DZ-SLEEP-01`.
+   → *"That's a write. The agent just changed the catalog through the server —
+   in production this syncs back to Shopify."*
+2. **`list_opportunities` re-run** — the to-do list drops **5 → 2**.
+   → *"It proved its own work. Three gaps gone."*
+3. **`draft_content`** → returns a brief, then Claude **writes** the copy.
+   → *"The server hands over a grounded brief; the agent writes the content.
+   Your data, its intelligence — that's why the server needs no model of its own."*
+4. **Recap** — what changed and expected improvement.
 
 ---
 
@@ -68,10 +83,9 @@ Then **narrate what Claude does** as the tool calls stream in:
 
 > "That's the same loop your dashboard runs — but now it's legible to agents. A
 > customer's ops agent, an agency's automation, or a shopping assistant can call
-> Wildcard directly. It's the 'API and MCP access — coming soon' on your
-> changelog, working, and it's the first real step toward being the command
-> center *for agents*, not just for people. It took me [X]; imagine it wired to
-> the real data behind your dashboard."
+> Wildcard directly, with a human approval gate built in. It's the 'API and MCP
+> access — coming soon' on your changelog, working, and it's the first real step
+> toward being the command center *for agents*, not just for people."
 
 ---
 
@@ -85,16 +99,22 @@ Then **narrate what Claude does** as the tool calls stream in:
 > it — it doesn't kill the UI. The real question is auth and metering, which is
 > an API-design problem, not a reason not to do it."
 
+**"What stops an agent from changing a customer's catalog without oversight?"**
+> "Two layers. The write tool is annotated `readOnlyHint: false` so clients can
+> require confirmation, and the audit workflow itself won't call it until the
+> operator approves. You'd add scoped API keys and an audit log in production —
+> but the approval model is already the default here, not an afterthought."
+
 **"How hard was this / is MCP a big lift?"**
 > "The plumbing is a day — the SDK handles the protocol. The real work was
 > modeling your loop correctly and deciding what an agent should be able to
-> *do*. That's the part I'd want to get right with you against the real data."
+> *do*, and where a human still has to sign off. That's the part I'd want to get
+> right with you against the real data."
 
-**"Where does the AI actually run? What does this cost you to operate?"**
+**"Where does the AI actually run? What does this cost to operate?"**
 > "The server has no LLM and no API key — it just serves data and performs
-> actions. The client's model (here, Claude Desktop) does all the reasoning and
-> writing. So it's $0 to run. In production you'd add auth, a hosted HTTP
-> transport, and real catalog sync."
+> actions. The client's model does all the reasoning and writing. So it's $0 to
+> run. In production you'd add auth, a hosted HTTP transport, and real catalog sync."
 
 **"Why should visibility work be agent-driven at all?"**
 > "Because the buying surface already is. If shoppers are asking agents what to
@@ -106,13 +126,15 @@ Then **narrate what Claude does** as the tool calls stream in:
 
 ## If the live UI fails — fallback
 
-Switch to the terminal and run:
-
 ```bash
 npm run smoke
 ```
 
-It drives the identical loop headless and prints each step (discovery → track →
-before/after opportunities → draft brief → revenue). Narrate from that. It also
-proves the point structurally: *this script is the agent, the server is the tool
-provider, talking MCP over a pipe.*
+Drives the identical loop headless and prints each step. Or open
+[demo-walkthrough.html](demo-walkthrough.html) for the visual storyboard.
+
+## Resetting between runs
+
+The enrichment persists while the server process is alive. To get a clean
+5-gap state: **fully quit Claude Desktop (⌘Q) and reopen.** That restarts the
+server subprocess with fresh seed data.

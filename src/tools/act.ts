@@ -47,7 +47,8 @@ export function registerActTools(server: McpServer): void {
     {
       title: "List prioritized optimization opportunities",
       description:
-        "Turn visibility gaps into a prioritized to-do list. Each opportunity names the losing prompt, the root cause (usually a missing catalog attribute), an estimated monthly revenue impact, and a priority score. Recomputed live — fixed gaps drop off.",
+        "Turn visibility gaps into a prioritized to-do list. Each opportunity names the losing prompt, the root cause (usually a missing catalog attribute), an estimated monthly revenue impact, and a priority score. Recomputed live — fixed gaps drop off. Safe to call during a read-only audit.",
+      annotations: { readOnlyHint: true },
       inputSchema: {},
     },
     async () => {
@@ -90,6 +91,7 @@ export function registerActTools(server: McpServer): void {
       title: "Get the product catalog",
       description:
         "List the client's products with how many required attributes each is missing (the AEO completeness view).",
+      annotations: { readOnlyHint: true },
       inputSchema: {},
     },
     async () => {
@@ -112,6 +114,7 @@ export function registerActTools(server: McpServer): void {
       title: "Get one product's details",
       description:
         "Full attribute detail for one SKU, including which required attributes are still missing.",
+      annotations: { readOnlyHint: true },
       inputSchema: {
         sku: z.string().describe("Product SKU, e.g. 'DZ-SLEEP-01'"),
       },
@@ -137,7 +140,15 @@ export function registerActTools(server: McpServer): void {
     {
       title: "Enrich a product's catalog attributes (write)",
       description:
-        "Fill in missing catalog attributes for a SKU. Pass `attributes` to set specific values, or omit it to auto-fill the recommended values for whatever is missing. This MUTATES the catalog for the session, so re-running list_opportunities reflects the fix. (Real product would sync back to Shopify/BigCommerce.)",
+        "Fill in missing catalog attributes for a SKU. Pass `attributes` to set specific values, or omit it to auto-fill the recommended values for whatever is missing. This MUTATES the catalog for the session, so re-running list_opportunities reflects the fix. (Real product would sync back to Shopify/BigCommerce.) This is a WRITE — only call it after the operator has approved the change.",
+      // MCP tool annotations: the protocol-level declaration that this tool
+      // changes state. Clients can use these hints to gate or confirm calls —
+      // it's the structural counterpart to the approval gate in our prompt.
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false, // additive: it fills blanks, doesn't delete data
+        idempotentHint: true, // applying the same attributes twice is a no-op
+      },
       inputSchema: {
         sku: z.string().describe("Product SKU to enrich, e.g. 'DZ-SLEEP-01'"),
         attributes: z

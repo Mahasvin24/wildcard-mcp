@@ -41,6 +41,7 @@ export function registerTrackTools(server: McpServer): void {
       title: "Track visibility for a buyer question",
       description:
         "Run a real buyer question against AI shopping surfaces and see which brands/products get named, each one's rank, plus the client brand's Share of Voice. This is the core 'where do we show up?' tool.",
+      annotations: { readOnlyHint: true },
       inputSchema: {
         prompt: z
           .string()
@@ -108,6 +109,7 @@ export function registerTrackTools(server: McpServer): void {
       title: "List tracked buyer questions",
       description:
         "List every buyer question Wildcard monitors for the client, with monthly volume, current position, and week-over-week movement. Good for a quick 'state of visibility' overview.",
+      annotations: { readOnlyHint: true },
       inputSchema: {},
     },
     async () => {
@@ -134,6 +136,7 @@ export function registerTrackTools(server: McpServer): void {
       title: "Compare against competitors",
       description:
         "Compare the client against competitors — for a specific prompt if given, otherwise overall Brand Rank and Share of Voice across all AI surfaces.",
+      annotations: { readOnlyHint: true },
       inputSchema: {
         prompt: z
           .string()
@@ -184,6 +187,7 @@ export function registerTrackTools(server: McpServer): void {
       title: "Get brand sentiment in AI answers",
       description:
         "How favorably AI surfaces describe a brand: positive/neutral/negative split plus sample language. Defaults to the client (Dosaze).",
+      annotations: { readOnlyHint: true },
       inputSchema: {
         brand: z
           .string()

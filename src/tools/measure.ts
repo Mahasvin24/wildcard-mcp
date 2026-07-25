@@ -17,6 +17,7 @@ export function registerMeasureTools(server: McpServer): void {
       title: "Get revenue attributed to AI surfaces",
       description:
         "Revenue, orders, and funnel by AI surface for the last 30 days, with growth vs the prior 30 days. Choose first-click (credits discovery) or last-click (default) attribution.",
+      annotations: { readOnlyHint: true },
       inputSchema: {
         model: z
           .enum(["first_click", "last_click"])
@@ -66,6 +67,7 @@ export function registerMeasureTools(server: McpServer): void {
       title: "Get visibility trend (position over time)",
       description:
         "Week-over-week position movement for a specific prompt, or all tracked prompts. Shows whether optimization work is moving rankings.",
+      annotations: { readOnlyHint: true },
       inputSchema: {
         prompt: z
           .string()
